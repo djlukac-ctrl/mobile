@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "L'Écho du Der",
+    "slug": "lecho-du-der",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "lechoduder",
+    "userInterfaceStyle": "dark",
+    "plugins": ["expo-router"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "fr.lechoduder.app"
+    },
+    "android": {
+      "package": "fr.lechoduder.app"
+    }
+  }
+}
