@@ -1,13 +1,70 @@
-import { ActivityIndicator, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, Image, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRadio } from '../../src/RadioProvider';
 import { colors } from '../../src/theme';
 
+const API_BASE = 'https://lechoduder.fr';
+
+type RequestMode = 'request' | 'suggest';
+
 export default function HomeScreen() {
   const { nowPlaying, playing, loading, toggle } = useRadio();
+  const [voteBusy, setVoteBusy] = useState(false);
+  const [voteMessage, setVoteMessage] = useState('');
+  const [requestMode, setRequestMode] = useState<RequestMode | null>(null);
+  const [requestTitle, setRequestTitle] = useState('');
+  const [requestArtist, setRequestArtist] = useState('');
+  const [requestBusy, setRequestBusy] = useState(false);
+
+  const vote = async (value: 1 | -1) => {
+    if (voteBusy) return;
+    setVoteBusy(true);
+    setVoteMessage('');
+    try {
+      const response = await fetch(`${API_BASE}/api/vote.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vote: value }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'Vote impossible.');
+      setVoteMessage(value === 1 ? 'Ton vote positif est enregistré.' : 'Ton vote négatif est enregistré.');
+    } catch (error) {
+      setVoteMessage(error instanceof Error ? error.message : 'Vote impossible.');
+    } finally {
+      setVoteBusy(false);
+    }
+  };
+
+  const openRequest = (mode: RequestMode) => {
+    setRequestMode(mode);
+    setRequestTitle('');
+    setRequestArtist('');
+  };
+
+  const submitRequest = async () => {
+    if (requestBusy || !requestTitle.trim()) return;
+    setRequestBusy(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/request.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: requestTitle.trim(), artist: requestArtist.trim() }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'Envoi impossible.');
+      setRequestMode(null);
+      Alert.alert(requestMode === 'suggest' ? 'Suggestion envoyée' : 'Demande envoyée', requestMode === 'suggest' ? 'Merci ! Ton titre a bien été proposé à L’Écho du Der.' : (data?.message || 'Ta demande a bien été envoyée.'));
+    } catch (error) {
+      Alert.alert('Impossible d’envoyer', error instanceof Error ? error.message : 'Réessaie dans quelques instants.');
+    } finally {
+      setRequestBusy(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.page}>
+      <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
         <View style={styles.brandWrap}>
           <Text style={styles.brand}>L’ÉCHO DU DER</Text>
           <Text style={styles.tagline}>LA RADIO DU LAC DU DER</Text>
@@ -33,11 +90,40 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionKicker}>L’ÉCHO DU DER</Text>
-          <Text style={styles.sectionTitle}>La radio dans ta poche.</Text>
-          <Text style={styles.sectionText}>Le direct continue pendant que tu navigues dans l’application. Retrouve maintenant les actualités du Der depuis l’onglet dédié.</Text>
+          <Text style={styles.sectionKicker}>TON AVIS COMPTE</Text>
+          <Text style={styles.sectionTitle}>Tu aimes ce titre ?</Text>
+          <View style={styles.voteRow}>
+            <Pressable style={[styles.voteButton, styles.voteUp]} disabled={voteBusy} onPress={() => vote(1)}><Text style={styles.voteEmoji}>👍</Text><Text style={styles.voteTextDark}>J’aime</Text></Pressable>
+            <Pressable style={[styles.voteButton, styles.voteDown]} disabled={voteBusy} onPress={() => vote(-1)}><Text style={styles.voteEmoji}>👎</Text><Text style={styles.voteText}>Pas pour moi</Text></Pressable>
+          </View>
+          {voteMessage ? <Text style={styles.feedback}>{voteMessage}</Text> : null}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionKicker}>À TOI DE JOUER</Text>
+          <Text style={styles.sectionTitle}>Qu’est-ce qu’on diffuse ?</Text>
+          <Text style={styles.sectionText}>Demande un morceau maintenant ou propose-nous un titre à ajouter à la programmation.</Text>
+          <View style={styles.actionRow}>
+            <Pressable style={styles.actionPrimary} onPress={() => openRequest('request')}><Text style={styles.actionPrimaryText}>Demander un titre</Text></Pressable>
+            <Pressable style={styles.actionSecondary} onPress={() => openRequest('suggest')}><Text style={styles.actionSecondaryText}>Suggérer un titre</Text></Pressable>
+          </View>
         </View>
       </ScrollView>
+
+      <Modal visible={requestMode !== null} transparent animationType="fade" onRequestClose={() => setRequestMode(null)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalKicker}>{requestMode === 'suggest' ? 'SUGGESTION' : 'DEMANDE DE TITRE'}</Text>
+            <Text style={styles.modalTitle}>{requestMode === 'suggest' ? 'Proposer un morceau' : 'Quel titre veux-tu entendre ?'}</Text>
+            <TextInput style={styles.input} value={requestTitle} onChangeText={setRequestTitle} placeholder="Titre du morceau" placeholderTextColor="#71849D" autoFocus />
+            <TextInput style={styles.input} value={requestArtist} onChangeText={setRequestArtist} placeholder="Artiste (facultatif)" placeholderTextColor="#71849D" />
+            <Pressable style={[styles.modalSubmit, (!requestTitle.trim() || requestBusy) && styles.disabled]} disabled={!requestTitle.trim() || requestBusy} onPress={submitRequest}>
+              {requestBusy ? <ActivityIndicator color="#07172C" /> : <Text style={styles.modalSubmitText}>Envoyer</Text>}
+            </Pressable>
+            <Pressable style={styles.modalCancel} onPress={() => setRequestMode(null)}><Text style={styles.modalCancelText}>Annuler</Text></Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -63,8 +149,31 @@ const styles = StyleSheet.create({
   playButtonPlaying: { backgroundColor: '#F3F6F8' },
   playIcon: { color: '#07172C', fontSize: 16, fontWeight: '900' },
   playLabel: { color: '#07172C', fontSize: 15, fontWeight: '900' },
-  section: { marginTop: 24, padding: 20, borderRadius: 22, borderWidth: 1, borderColor: colors.border, backgroundColor: 'rgba(6,26,61,0.72)' },
+  section: { marginTop: 18, padding: 20, borderRadius: 22, borderWidth: 1, borderColor: colors.border, backgroundColor: 'rgba(6,26,61,0.72)' },
   sectionKicker: { color: colors.cyan, fontSize: 9, fontWeight: '900', letterSpacing: 1.5 },
-  sectionTitle: { marginTop: 8, color: colors.text, fontSize: 24, fontWeight: '900', letterSpacing: -0.6 },
-  sectionText: { marginTop: 10, color: colors.muted, fontSize: 13, lineHeight: 20 },
+  sectionTitle: { marginTop: 8, color: colors.text, fontSize: 23, fontWeight: '900', letterSpacing: -0.6 },
+  sectionText: { marginTop: 9, color: colors.muted, fontSize: 12, lineHeight: 18 },
+  voteRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
+  voteButton: { flex: 1, minHeight: 50, borderRadius: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  voteUp: { backgroundColor: colors.lime },
+  voteDown: { backgroundColor: '#0B2A55', borderWidth: 1, borderColor: colors.border },
+  voteEmoji: { fontSize: 16 },
+  voteTextDark: { color: '#07172C', fontSize: 12, fontWeight: '900' },
+  voteText: { color: colors.text, fontSize: 12, fontWeight: '900' },
+  feedback: { marginTop: 10, color: colors.muted, fontSize: 11 },
+  actionRow: { gap: 10, marginTop: 16 },
+  actionPrimary: { minHeight: 50, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.lime },
+  actionPrimaryText: { color: '#07172C', fontSize: 13, fontWeight: '900' },
+  actionSecondary: { minHeight: 50, borderRadius: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(57,220,255,0.35)', backgroundColor: 'rgba(57,220,255,0.06)' },
+  actionSecondaryText: { color: colors.cyan, fontSize: 13, fontWeight: '900' },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,7,22,0.82)', alignItems: 'center', justifyContent: 'center', padding: 22 },
+  modalCard: { width: '100%', borderRadius: 26, padding: 22, backgroundColor: '#071D41', borderWidth: 1, borderColor: 'rgba(216,255,86,0.18)' },
+  modalKicker: { color: colors.lime, fontSize: 9, fontWeight: '900', letterSpacing: 1.4 },
+  modalTitle: { marginTop: 8, marginBottom: 18, color: colors.text, fontSize: 24, lineHeight: 28, fontWeight: '900' },
+  input: { height: 52, marginBottom: 10, paddingHorizontal: 15, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: '#04142F', color: colors.text, fontSize: 14 },
+  modalSubmit: { height: 52, marginTop: 4, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.lime },
+  modalSubmitText: { color: '#07172C', fontSize: 13, fontWeight: '900' },
+  disabled: { opacity: 0.5 },
+  modalCancel: { height: 44, alignItems: 'center', justifyContent: 'center' },
+  modalCancelText: { color: colors.muted, fontSize: 12, fontWeight: '800' },
 });
