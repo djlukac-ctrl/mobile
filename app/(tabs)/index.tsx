@@ -102,7 +102,6 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
         <View style={styles.brandWrap}>
           <Image source={{ uri: LOGO_URL }} style={styles.brandLogo} resizeMode="contain" accessibilityLabel="Logo L’Écho du Der" />
-          <Text style={styles.tagline}>LA RADIO DU LAC DU DER</Text>
         </View>
 
         <View style={styles.liveCard}>
@@ -130,7 +129,6 @@ export default function HomeScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionKicker}>À TOI DE JOUER</Text><Text style={styles.sectionTitle}>Qu’est-ce qu’on diffuse ?</Text>
-          <Text style={styles.sectionText}>Choisis un morceau disponible dans AzuraCast ou propose-nous un nouveau titre à ajouter à la programmation.</Text>
           <View style={styles.actionRow}>
             <Pressable style={styles.actionPrimary} onPress={() => openRequest('request')}><Text style={styles.actionPrimaryText}>Demander un titre</Text></Pressable>
             <Pressable style={styles.actionSecondary} onPress={() => openRequest('suggest')}><Text style={styles.actionSecondaryText}>Suggérer un titre</Text></Pressable>
@@ -178,7 +176,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background }, page: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 24, paddingBottom: 32 },
-  brandWrap: { alignItems: 'center', marginBottom: 28 }, brandLogo: { width: 190, height: 82 }, tagline: { marginTop: 6, color: colors.lime, fontSize: 10, fontWeight: '800', letterSpacing: 2 },
+  brandWrap: { alignItems: 'center', marginBottom: 28 }, brandLogo: { width: 190, height: 82 },
   liveCard: { padding: 22, borderRadius: 28, borderWidth: 1, borderColor: 'rgba(216,255,86,0.20)', backgroundColor: colors.panel }, eyebrow: { color: colors.lime, fontSize: 10, fontWeight: '900', letterSpacing: 1.4, marginBottom: 18 },
   trackRow: { flexDirection: 'row', alignItems: 'center', gap: 16 }, coverWrap: { borderRadius: 20, overflow: 'hidden' }, cover: { width: 108, height: 108, borderRadius: 20 }, coverFallback: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.panelDark }, coverText: { color: colors.lime, fontSize: 32, fontWeight: '900' },
   trackCopy: { flex: 1, minWidth: 0 }, title: { color: colors.text, fontSize: 26, lineHeight: 29, fontWeight: '900', letterSpacing: -0.8 }, artist: { marginTop: 6, color: '#D7E0EA', fontSize: 16, fontWeight: '700' }, listeners: { marginTop: 12, color: colors.muted, fontSize: 11, fontWeight: '600' },
