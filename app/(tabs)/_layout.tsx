@@ -28,7 +28,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="actualites" options={{ title: 'Actualités', tabBarIcon: ({ focused }) => <TabIcon symbol="▤" active={focused} /> }} />
       <Tabs.Screen name="podcasts" options={{ title: 'Podcasts', tabBarIcon: ({ focused }) => <TabIcon symbol="◉" active={focused} /> }} />
       <Tabs.Screen name="artistes" options={{ title: 'Artistes', tabBarIcon: ({ focused }) => <TabIcon symbol="★" active={focused} /> }} />
-      <Tabs.Screen name="plus" options={{ title: 'Plus', tabBarIcon: ({ focused }) => <TabIcon symbol="•••" active={focused} /> }} />
+      <Tabs.Screen name="partenaires" options={{ title: 'Partenaires', tabBarIcon: ({ focused }) => <TabIcon symbol="◇" active={focused} /> }} />
+      <Tabs.Screen name="plus" options={{ href: null }} />
     </Tabs>
   );
 }
